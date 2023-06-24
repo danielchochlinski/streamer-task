@@ -15,7 +15,7 @@ export interface IStreamerModel extends IStreamer, Document {}
 
 const StreamerSchema: Schema = new Schema({
     name: { type: String, required: [true, 'Streamer must have a name!'] },
-    platform: [{ type: String }],
+    platforms: [{ type: String }],
     description: { type: String, required: [true, 'Streamer must have a description!'] },
     votes: {
         up: { type: Number },
