@@ -22,7 +22,7 @@ export const createStreamer = async (req: Request, res: Response) => {
         return res.status(500).send('Internal Server Error');
     }
 };
-
+//test
 export const voteForStreamer = async (req: Request, res: Response) => {
     try {
     } catch (err) {
