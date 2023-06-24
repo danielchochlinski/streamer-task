@@ -39,8 +39,6 @@ export const createStreamer = async (req: Request, res: Response) => {
     const { name, description, platforms } = req.body;
     const convertedImage = req.compressedImage;
 
-    console.log(convertedImage);
-
     try {
         const streamerAlreadyExists = await Streamer.findOne({ name });
         if (streamerAlreadyExists) return res.send({ status: 'Success', message: 'Streamer already exisits' });
@@ -57,16 +55,35 @@ export const createStreamer = async (req: Request, res: Response) => {
         return res.status(500).send('Internal Server Error');
     }
 };
+
 export const voteForStreamer = async (req: Request, res: Response) => {
-    const { up, down } = req.body;
-    const update = { up, down };
     const { id } = req.params;
+    const { voteType } = req.body;
+
     try {
-        const updatedStreamer = await Streamer.findByIdAndUpdate(id, { $push: { votes: update } }, { new: true });
-        return res.send({
+        if (!voteType) {
+            return res.status(400).json({
+                status: 'Error',
+                message: 'Invalid request. Please provide voteType.'
+            });
+        }
+
+        const updatedStreamer = await Streamer.findOneAndUpdate({ _id: id }, { $inc: { [`votes.${voteType}`]: 1 } }, { new: true });
+
+        if (!updatedStreamer) {
+            return res.status(404).json({
+                status: 'Error',
+                message: 'Streamer not found.'
+            });
+        }
+
+        return res.json({
             status: 'Success',
-            message: 'Your vote has been succesfully added!',
-            votes: updatedStreamer?.votes
+            message: 'Your vote has been successfully added!',
+            votes: {
+                up: updatedStreamer.votes.up,
+                down: updatedStreamer.votes.down
+            }
         });
     } catch (err) {
         console.error(err);

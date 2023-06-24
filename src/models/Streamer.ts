@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IStreamer {
     name: string;
-    platform: string[];
+    platforms: string[];
     description: string;
     votes: {
         up: number;
