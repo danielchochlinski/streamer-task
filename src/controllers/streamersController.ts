@@ -38,9 +38,6 @@ export const getAllStreamers = async (req: Request, res: Response) => {
 
         const totalPages = Math.ceil(totalDocuments / pageSize);
 
-        //additional information note to myself
-        // const queryParams = queryString.stringify({ page: String(page), limit: String(limit) });
-
         return res.send({
             status: 'Success',
             streamers,

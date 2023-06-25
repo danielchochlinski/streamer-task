@@ -21,20 +21,57 @@ describe('App', () => {
     });
 });
 
+describe('findStreamerByName', () => {
+    it('should find a streamer by name', async () => {
+        const mockStreamer = await Streamer.create({
+            name: 'John Doe',
+            platforms: ['Twitch'],
+            description: 'Test description',
+            votes: { up: 0, down: 0 }
+        });
+
+        const response = await request(app).get('/api/streamer?name=John%20Doe');
+
+        expect(response.status).toBe(200);
+        expect(response.body.status).toBe('Success');
+        expect(response.body.message).toBe('Streamer has been successfully found!');
+        expect(response.body.streamer.length).toBe(1);
+        expect(response.body.streamer[0]._id).toEqual(mockStreamer._id.toString());
+    });
+
+    it('should return 404 if streamer is not found', async () => {
+        const response = await request(app).get('/api/streamer?name=Non-existent%20Streamer');
+
+        expect(response.status).toBe(404);
+        expect(response.body.status).toBe('Error');
+        expect(response.body.message).toBe('Streamer not found!');
+    });
+
+    it('should return 500 if an error occurs during the search', async () => {
+        // Mock an error during the search
+        jest.spyOn(Streamer, 'find').mockRejectedValueOnce(new Error('Internal Server Error'));
+
+        const response = await request(app).get('/api/streamer?name=John%20Doe');
+
+        expect(response.status).toBe(500);
+        expect(response.text).toBe('Internal Server Error');
+    });
+});
+
 describe('getAllStreamers', () => {
     it('should return all streamers with pagination details', async () => {
         const mockData = [
             {
                 name: 'John Doe',
                 platforms: ['Twitch'],
-                description: 'Streamer 1 description',
+                description: 'Test description',
                 votes: { up: 10, down: 5 },
                 image: Buffer.from('sample-image-1')
             },
             {
                 name: 'Foo Bar',
                 platforms: ['YouTube', 'Twitch'],
-                description: 'Streamer 2 description',
+                description: 'Test description',
                 votes: { up: 8, down: 3 },
                 image: Buffer.from('sample-image-2')
             }
@@ -58,7 +95,7 @@ describe('createStreamer', () => {
     it('should create a new streamer', async () => {
         const requestBody = {
             name: 'John Doe',
-            description: 'Son of Foo Bar',
+            description: 'Test description',
             platforms: ['Twitch']
         };
 
@@ -75,16 +112,16 @@ describe('createStreamer', () => {
     it('should return an error if the streamer already exists', async () => {
         // Mock streamer for testing
         const mockDataStreamer = {
-            name: 'Existing Streamer',
-            description: 'Existing streamer description',
+            name: 'John Doe',
+            description: 'Test description',
             platforms: ['YouTube']
         };
 
         await Streamer.create(mockDataStreamer);
 
         const requestBody = {
-            name: 'Existing Streamer',
-            description: 'New description',
+            name: 'John Doe',
+            description: 'Test description',
             platforms: ['Twitch']
         };
 
@@ -101,7 +138,7 @@ describe('voteForStreamer', () => {
         const mockStreamer = await Streamer.create({
             name: 'John Doe',
             platforms: ['Twitch'],
-            description: 'Streamer 1 description',
+            description: 'Test description',
             votes: { up: 0, down: 0 }
         });
 
@@ -118,7 +155,7 @@ describe('voteForStreamer', () => {
         const mockStreamer = await Streamer.create({
             name: 'John Doe',
             platforms: ['Twitch'],
-            description: 'Streamer 1 description',
+            description: 'Test description',
             votes: { up: 0, down: 0 }
         });
 
@@ -132,7 +169,7 @@ describe('voteForStreamer', () => {
         const newStreamer = new Streamer({
             name: 'John Doe',
             platforms: ['Twitch'],
-            description: 'Streamer 1 description',
+            description: 'Test description',
             votes: { up: 0, down: 0 }
         });
 
@@ -147,43 +184,5 @@ describe('voteForStreamer', () => {
             status: 'Error',
             message: 'Streamer not found.'
         });
-    });
-});
-
-describe('findStreamerByName', () => {
-    it('should find a streamer by name', async () => {
-        // Create a mock streamer
-        const mockStreamer = await Streamer.create({
-            name: 'John Doe',
-            platforms: ['Twitch'],
-            description: 'Streamer 1 description',
-            votes: { up: 0, down: 0 }
-        });
-
-        const response = await request(app).post('/api/streamer/find-by-name').send({ name: 'John Doe' });
-
-        expect(response.status).toBe(200);
-        expect(response.body.status).toBe('Success');
-        expect(response.body.message).toBe('Streamer has been successfully found!');
-        expect(response.body.streamer.length).toBe(1);
-        expect(response.body.streamer[0]._id).toEqual(mockStreamer._id.toString());
-    });
-
-    it('should return 404 if streamer is not found', async () => {
-        const response = await request(app).post('/api/streamer/find-by-name').send({ name: 'Non-existent Streamer' });
-
-        expect(response.status).toBe(404);
-        expect(response.body.status).toBe('Error');
-        expect(response.body.message).toBe('Streamer not found!');
-    });
-
-    it('should return 500 if an error occurs during the search', async () => {
-        // Mock an error during the search
-        jest.spyOn(Streamer, 'find').mockRejectedValueOnce(new Error('Database error'));
-
-        const response = await request(app).post('/api/streamer/find-by-name').send({ name: 'John Doe' });
-
-        expect(response.status).toBe(500);
-        expect(response.text).toBe('Internal Server Error');
     });
 });
