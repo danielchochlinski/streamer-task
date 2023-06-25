@@ -15,8 +15,8 @@ const connectDB = async () => {
 };
 
 //in memory server used for testing
+export let mongoServer: MongoMemoryServer;
 const connectDBTest = async () => {
-    let mongoServer: MongoMemoryServer;
     try {
         mongoServer = new MongoMemoryServer();
         await mongoServer.start();

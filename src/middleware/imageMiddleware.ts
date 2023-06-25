@@ -24,6 +24,11 @@ export const imageMiddleware = async (req: Request, res: Response, next: NextFun
                 return res.status(400).json({ error: err.message });
             }
 
+            if (!req.file) {
+                // No image uploaded, proceed to the next middleware
+                return next();
+            }
+
             const fileBuffer = req.file?.buffer as Buffer;
             let compressedImage: Buffer;
 
