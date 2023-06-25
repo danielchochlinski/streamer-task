@@ -1,6 +1,25 @@
 import { Request, Response } from 'express';
 import Streamer from '../models/Streamer';
-import queryString from 'qs';
+
+export const findStreamerByName = async (req: Request, res: Response) => {
+    const { name } = req.query;
+    try {
+        const streamer = await Streamer.find({ name });
+        if (!streamer || streamer.length === 0)
+            return res.status(404).send({
+                status: 'Error',
+                message: 'Streamer not found!'
+            });
+        return res.send({
+            status: 'Success',
+            message: 'Streamer has been successfully found!',
+            streamer
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send('Internal Server Error');
+    }
+};
 
 export const getAllStreamers = async (req: Request, res: Response) => {
     const { page, limit } = req.query;
@@ -18,9 +37,6 @@ export const getAllStreamers = async (req: Request, res: Response) => {
         ]);
 
         const totalPages = Math.ceil(totalDocuments / pageSize);
-
-        //additional information note for myself
-        // const queryParams = queryString.stringify({ page: String(page), limit: String(limit) });
 
         return res.send({
             status: 'Success',
@@ -41,13 +57,22 @@ export const createStreamer = async (req: Request, res: Response) => {
 
     try {
         const streamerAlreadyExists = await Streamer.findOne({ name });
-        if (streamerAlreadyExists) return res.send({ status: 'Success', message: 'Streamer already exisits' });
+        if (streamerAlreadyExists)
+            return res.send({
+                status: 'Error',
+                message: 'Streamer already exists'
+            });
 
-        const newStreamer = await Streamer.create({ name, description, platforms, image: convertedImage });
+        const newStreamer = await Streamer.create({
+            name,
+            description,
+            platforms,
+            image: convertedImage
+        });
 
         return res.status(201).send({
             status: 'Success',
-            message: 'Streamer has been succesfully created',
+            message: 'Streamer has been successfully created',
             streamer: newStreamer
         });
     } catch (err) {

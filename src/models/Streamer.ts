@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IStreamer {
+interface IStreamer {
     name: string;
     platforms: string[];
     description: string;
@@ -11,10 +11,10 @@ export interface IStreamer {
     image: Buffer;
 }
 
-export interface IStreamerModel extends IStreamer, Document {}
+interface IStreamerModel extends IStreamer, Document {}
 
 const StreamerSchema: Schema = new Schema({
-    name: { type: String, required: [true, 'Streamer must have a name!'] },
+    name: { type: String, required: [true, 'Streamer must have a name!'], unique: true },
     platforms: [{ type: String }],
     description: { type: String, required: [true, 'Streamer must have a description!'] },
     votes: {
