@@ -1,23 +1,39 @@
 import { Request, Response } from 'express';
-import Streamer from '../models/Streamer';
+import Streamer, { IStreamer } from '../models/Streamer';
 
 export const findStreamerByName = async (req: Request, res: Response) => {
     const { name } = req.query;
     try {
-        const streamer = await Streamer.find({ name });
-        if (!streamer || streamer.length === 0)
-            return res.status(404).send({
-                status: 'Error',
+        const streamer = await Streamer.findOne({ name }).lean();
+        if (!streamer)
+            return res.status(204).send({
+                status: 'WARNING',
                 message: 'Streamer not found!'
             });
         return res.send({
-            status: 'Success',
+            status: 'SUCCESS',
             message: 'Streamer has been successfully found!',
             streamer
         });
     } catch (err) {
         console.error(err);
-        return res.status(500).send('Internal Server Error');
+        return res.status(500).send({ status: 'ERROR', message: 'Internal Server Error' });
+    }
+};
+export const getAllStreamerNames = async (req: Request, res: Response) => {
+    try {
+        const streamers = await Streamer.find({}, { name: 1 }).lean();
+        const streamerNames = streamers.map((streamer: IStreamer) => {
+            return { name: streamer.name };
+        });
+
+        return res.send({
+            status: 'SUCCESS',
+            streamers: streamerNames
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send({ status: 'ERROR', message: 'Internal Server Error' });
     }
 };
 
@@ -28,18 +44,17 @@ export const getAllStreamers = async (req: Request, res: Response) => {
     const pageSize = parseInt(limit as string, 10) || 10;
 
     try {
-        const [streamers, totalDocuments] = await Promise.all([
-            Streamer.find()
-                .skip((pageNumber - 1) * pageSize)
-                .limit(pageSize)
-                .lean(),
-            Streamer.countDocuments()
-        ]);
+        let streamersQuery = Streamer.find();
+
+        if (pageNumber && pageSize) {
+            streamersQuery = streamersQuery.skip((pageNumber - 1) * pageSize).limit(pageSize);
+        }
+
+        const [streamers, totalDocuments] = await Promise.all([streamersQuery.lean(), Streamer.countDocuments()]);
 
         const totalPages = Math.ceil(totalDocuments / pageSize);
-
         return res.send({
-            status: 'Success',
+            status: 'SUCCESS',
             streamers,
             totalPages,
             currentPage: pageNumber,
@@ -47,7 +62,7 @@ export const getAllStreamers = async (req: Request, res: Response) => {
         });
     } catch (err) {
         console.error(err);
-        return res.status(500).send('Internal Server Error');
+        return res.status(500).send({ status: 'ERROR', message: 'Internal Server Error' });
     }
 };
 
@@ -57,27 +72,30 @@ export const createStreamer = async (req: Request, res: Response) => {
 
     try {
         const streamerAlreadyExists = await Streamer.findOne({ name });
-        if (streamerAlreadyExists)
-            return res.send({
-                status: 'Error',
+        if (streamerAlreadyExists) {
+            return res.status(400).send({
+                status: 'WARNING',
                 message: 'Streamer already exists'
             });
+        }
+
+        const parsedPlatforms = JSON.parse(platforms);
 
         const newStreamer = await Streamer.create({
             name,
             description,
-            platforms,
+            platforms: parsedPlatforms,
             image: convertedImage
         });
 
         return res.status(201).send({
-            status: 'Success',
+            status: 'SUCCESS',
             message: 'Streamer has been successfully created',
             streamer: newStreamer
         });
     } catch (err) {
         console.error(err);
-        return res.status(500).send('Internal Server Error');
+        return res.status(500).send({ status: 'ERROR', message: 'Internal Server Error' });
     }
 };
 
@@ -88,7 +106,7 @@ export const voteForStreamer = async (req: Request, res: Response) => {
     try {
         if (!voteType) {
             return res.status(400).json({
-                status: 'Error',
+                status: 'ERROR',
                 message: 'Invalid request. Please provide voteType.'
             });
         }
@@ -96,14 +114,14 @@ export const voteForStreamer = async (req: Request, res: Response) => {
         const updatedStreamer = await Streamer.findOneAndUpdate({ _id: id }, { $inc: { [`votes.${voteType}`]: 1 } }, { new: true });
 
         if (!updatedStreamer) {
-            return res.status(404).json({
-                status: 'Error',
+            return res.status(204).json({
+                status: 'WARNING',
                 message: 'Streamer not found.'
             });
         }
 
-        return res.json({
-            status: 'Success',
+        return res.status(201).send({
+            status: 'SUCCESS',
             message: 'Your vote has been successfully added!',
             votes: {
                 up: updatedStreamer.votes.up,
@@ -112,6 +130,27 @@ export const voteForStreamer = async (req: Request, res: Response) => {
         });
     } catch (err) {
         console.error(err);
-        return res.status(500).send('Internal Server Error');
+        return res.status(500).send({ status: 'ERROR', message: 'Internal Server Error' });
+    }
+};
+
+export const getPopularStreamers = async (_req: Request, res: Response) => {
+    try {
+        const popularStreamers = await Streamer.find().sort({ 'votes.up': -1 }).limit(5).lean();
+
+        if (popularStreamers.length === 0) {
+            return res.status(204).send({
+                status: 'WARNING',
+                message: 'No streamer found!'
+            });
+        }
+
+        return res.send({
+            status: 'SUCCESS',
+            popularStreamers
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send({ status: 'ERROR', message: 'Internal Server Error' });
     }
 };
