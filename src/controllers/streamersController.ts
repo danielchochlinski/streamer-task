@@ -136,7 +136,23 @@ export const voteForStreamer = async (req: Request, res: Response) => {
 
 export const getPopularStreamers = async (_req: Request, res: Response) => {
     try {
-        const popularStreamers = await Streamer.find().sort({ 'votes.up': -1 }).limit(5).lean();
+        const popularStreamers = await Streamer.aggregate([
+            {
+                $addFields: {
+                    totalVotes: {
+                        $subtract: ['$votes.up', '$votes.down']
+                    }
+                }
+            },
+            {
+                $sort: {
+                    totalVotes: -1
+                }
+            },
+            {
+                $limit: 5
+            }
+        ]);
 
         if (popularStreamers.length === 0) {
             return res.status(204).send({
