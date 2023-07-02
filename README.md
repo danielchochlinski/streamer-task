@@ -38,7 +38,7 @@ This project is licensed under the MIT License.
 
 If you have any questions or need further assistance, please feel free to reach out to the project maintainer.
 
-- **Name:** [Daniel Chochlinski]
+- **Name:** Daniel Chochlinski
 - **Email:** danielchochlinski@gmail.com
 
 ---
